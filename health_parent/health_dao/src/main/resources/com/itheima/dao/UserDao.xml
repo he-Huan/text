@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itheima.dao.UserDao">
+    <resultMap id="userRolePermission" type="user">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <collection property="roles" ofType="role" column="role_id">
+            <id property="id" column="role_id"/>
+            <result property="keyword" column="role_keyword"/>
+            <collection property="permissions" ofType="permission" column="permission_id">
+                <id property="id" column="permission_id"/>
+                <result property="keyword" column="permission_keyword"/>
+            </collection>
+        </collection>
+    </resultMap>
+    <select id="findByUsername" parameterType="string" resultMap="userRolePermission">
+         select
+             u.id,u.username,u.password,
+             ur.role_id, r.keyword as role_keyword,
+             rp.permission_id, p.keyword as permission_keyword
+        from t_user u, t_user_role ur, t_role r, t_role_permission rp, t_permission p
+        where u.id=ur.user_id and ur.role_id=r.id and r.id=rp.role_id and rp.permission_id=p.id
+        and u.username=#{username}
+    </select>
+
+    <resultMap id="menu" type="user">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <collection property="roles" ofType="role" column="role_id">
+            <id property="id" column="role_id"/>
+            <result property="keyword" column="role_keyword"/>
+            <collection property="permissions" ofType="permission" column="permission_id">
+                <id property="id" column="permission_id"/>
+                <result property="keyword" column="permission_keyword"/>
+            </collection>
+            <collection property="menus" ofType="Menu" column="menu_id">
+                <id property="id" column="menu_id"/>
+                <result property="linkUrl" column="menu_linkUrl"/>
+                <result property="name" column="name"/>
+                <result property="path" column="path"/>
+                <result property="parentMenuId" column="parentMenuId"/>
+                <result property="priority" column="priority"/>
+                <result property="icon" column="icon"/>
+            </collection>
+        </collection>
+    </resultMap>
+    <select id="findMenuByUsername" parameterType="string" resultMap="menu">
+        SELECT
+	        u.id,
+	        u.username,
+	        u. PASSWORD,
+	        ur.role_id,
+	        r.keyword AS role_keyword,
+	        rp.permission_id,
+	        p.keyword AS permission_keyword,
+	        rm.menu_id,
+            m.name,
+	        m.path,
+            m.linkUrl AS menu_linkUrl,
+            m.parentMenuId,
+            m.priority,
+            m.icon
+        FROM
+        	t_user u,
+        	t_user_role ur,
+        	t_role r,
+        	t_role_permission rp,
+        	t_permission p,
+        	t_menu m,
+        	t_role_menu rm
+        WHERE
+        	u.id = ur.user_id
+        AND ur.role_id = r.id
+        AND r.id = rp.role_id
+        AND rp.permission_id = p.id
+        AND r.id = rm.role_id
+        AND m.id = rm.menu_id
+        AND u.username = #{username}
+    </select>
+</mapper>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itheima.dao.PackageDao">
+    <select id="findPage" parameterType="string" resultType="package">
+        select * from t_package
+        <if test="value != null and value.length > 0">
+            where name like #{value} or code like #{value} or helpCode like #{value}
+        </if>
+    </select>
+
+    <insert id="add" parameterType="package">
+        insert into t_package(name,code,helpCode,sex,age,price,remark,attention,img)
+        values(#{name},#{code},#{helpCode},#{sex},#{age},#{price},#{remark},#{attention},#{img})
+        <selectKey keyProperty="id" resultType="int" order="AFTER">
+            select LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <insert id="addPackageCheckGroup" parameterType="Integer">
+        insert into t_package_checkgroup values (#{pkgId},#{checkgroupId})
+    </insert>
+
+    <select id="findAll" resultType="Package">
+        select * from t_package
+    </select>
+
+    <resultMap id="packageDetail" type="package">
+        <!--套餐-->
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="code" column="code"/>
+        <result property="helpCode" column="helpCode"/>
+        <result property="sex" column="sex"/>
+        <result property="age" column="age"/>
+        <result property="price" column="price"/>
+        <result property="remark" column="remark"/>
+        <result property="attention" column="attention"/>
+        <result property="img" column="img"/>
+        <!--检查组-->
+        <collection property="checkGroups" ofType="CheckGroup" javaType="List">
+            <id property="id" column="checkgroup_id"/>
+            <result property="name" column="checkgroup_name"/>
+            <result property="remark" column="checkgroup_remark"/>
+            <!--检查项-->
+            <collection property="checkItems" ofType="CheckItem" javaType="List">
+                <id property="id" column="checkitem_id"/>
+                <result property="name" column="checkitem_name"/>
+            </collection>
+
+        </collection>
+
+    </resultMap>
+    <select id="findById" parameterType="int" resultMap="packageDetail">
+       SELECT
+	  p.*, pc.checkgroup_id,
+	  g.`name` AS checkgroup_name,
+	  g.remark AS checkgroup_remark,
+	  i.`name` AS checkitem_name,
+	  cc.checkitem_id
+      FROM
+	  t_checkgroup g,
+	  t_checkitem i,
+	  t_package p,
+	  t_checkgroup_checkitem cc,
+	  t_package_checkgroup pc
+      WHERE
+	  p.id = #{id}
+      AND p.id = pc.package_id
+      AND g.id = pc.checkgroup_id
+      AND i.id = cc.checkitem_id
+      AND g.id = cc.checkgroup_id
+    </select>
+
+    <select id="findPackageById" parameterType="int" resultType="package">
+      select * from t_package where id=#{id}
+    </select>
+
+    <select id="getPackageReport" resultType="map">
+        SELECT
+        	p. NAME,
+        	COUNT(1) AS VALUE
+        FROM
+        	t_order o,
+        	t_package p
+        WHERE
+        	o.package_id = p.id
+        GROUP BY
+	        package_id
+	 </select>
+</mapper>

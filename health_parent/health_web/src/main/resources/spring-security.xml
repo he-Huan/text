@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xmlns:securicty="http://www.springframework.org/schema/security"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!--静态资源过滤，不需要认证登录就可以访问
+        所有的资源路径必须以‘/’开始
+        pattern:匹配规则
+        security="none":表示无需认证
+    -->
+    <security:http pattern="/css/**" security="none"/>
+    <security:http pattern="/js/**" security="none"/>
+    <security:http pattern="/plugins/**" security="none"/>
+    <security:http pattern="/img/**" security="none"/>
+    <security:http pattern="/template/**" security="none"/>
+    <security:http pattern="/login.html" security="none"/>
+    <!--拦截url （http）的配置
+    auto-config="true":自动配置生成登录页面
+    use-expressions="false"：是否使用spring-el表达式，不使用的话，access的值必须以ROLE_打头
+            true：不能使用字符串，
+    -->
+    <security:http auto-config="true" use-expressions="true">
+        <!--
+        intercept-url：拦截的配置
+        pattern：拦截规则，/**：拦截所有页面
+        access：访问，用户具有access配置的角色，或者use-expressions为true拥有相应的权限，就可以访问
+        -->
+        <!--<security:intercept-url pattern="/**" access="ROLE_ADMIN"/>
+        <security:intercept-url pattern="/a.html" access="ROLE_ADMIN"/>-->
+
+        <!--只要认证通过就可以访问
+           isAuthenticated: 是否认证过了，是否登陆，登陆就可以访问
+       -->
+        <security:headers>
+            <security:frame-options policy="SAMEORIGIN"/>
+        </security:headers>
+        <security:intercept-url pattern="/**"  access="isAuthenticated()" />
+        <!--登陆的配置信息
+         login-page：告诉登录页面在哪里
+          username-parameter:登录时提交的用户名的参数名称
+          default-target-url:登录成功后默认跳转的页面，登录成功后会跳转到原来的页面
+          如果原来的页面是login.html，他就会跳转到login.html
+          always-use-default-target:true,不管是从哪个页面跳转过来的，都跳转到默认页面，一般为false
+          authentication-failure-url:登录失败后跳转的页面
+           login-processing-url:处理认证登录的方法（url）
+        -->
+        <security:form-login
+                login-page="/login.html"
+                login-processing-url="/login.do"
+                username-parameter="username"
+                password-parameter="password"
+                default-target-url="/pages/main.html"
+                always-use-default-target="false"
+                authentication-failure-url="/login.html"
+        />
+        <!--禁止跨域访问的限制-->
+        <security:csrf disabled="true"/>
+        <!--退出登录的配置
+        logout-url:处理退出登录的请求
+        logout-success-url：退出成功后跳转的页面
+        invalidate-session：销毁session
+        -->
+        <securicty:logout logout-url="/logout.do" logout-success-url="/login.html" invalidate-session="true"/>
+    </security:http>
+    <!--开启注解支持，开启注解方式的权限控制-->
+    <security:global-method-security pre-post-annotations="enabled"/>
+    <!--认证管理器的配置-->
+    <security:authentication-manager>
+        <!--认证信息提供，提供认证的用户信息，执行登录认证
+        user-service-ref:用户信息可以由这个来提供，引用了容器的bean对象来提供，securityUserService
+        要想从数据库动态获取用户信息，securityUserService必须实现userDetailService接口
+        -->
+        <security:authentication-provider user-service-ref="securityUserServiceImpl">
+            <!--使用encoder对登录密码进行校验
+            一个是从前端来的密码，
+            一个是从数据库来的：userDetails
+            -->
+            <security:password-encoder ref="encoder"/>
+            <!--由用户业务来提供-->
+            <!--<security:user-service>
+                &lt;!&ndash;写死用户名与密码及所拥有的角色
+                    {noop}: 密码不操作，说明密码为明文，不加密
+                    authorities：这个用户所拥有的权限，此时角色必须与拦截规则中的access一致
+                &ndash;&gt;
+                <security:user name="admin" password="{noop}admin" authorities="ROLE_ADMIN"/>
+            </security:user-service>-->
+        </security:authentication-provider>
+    </security:authentication-manager>
+    <!--加密器-->
+    <bean id="encoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+</beans>
